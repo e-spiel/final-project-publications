@@ -1,0 +1,343 @@
+---
+title: "CTS Publications Report"
+author: "Emma Spielfogel"
+date: "2022-12-30"
+params:
+  topic_selection: "Breast"
+  year_selection: "2002"
+output:
+  html_document:
+    theme: cerulean
+    toc: TRUE
+    toc_depth: 3
+    toc_float: TRUE
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+```{r packages}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(readxl)
+library(gt)
+library(ggtext)
+library(scales)
+library(hrbrthemes)
+library(ggalt)
+library(systemfonts)
+library(extrafont)
+library(tidytext)
+```
+
+```{r import data}
+# Reading in data
+publications <- read_rds("clean-data/cts-publications-clean.rds")
+```
+
+![](images/CTS website header.png){width=50px}
+
+# Introduction
+
+This report provides an overview of publications using [California Teachers Study](https://www.calteachersstudy.org) data.
+
+> Although the California Teachers Study's early research focused primarily on breast cancer, the design of a cohort study like the CTS supports research on many aspects of women's health.
+> 
+> California Teachers Study researchers have examined specific cancers as well as the risk factors - both modifiable and inherited - that contribute to female reproductive cancers and other diseases among our study population.^[Source: [California Teachers Study website](https://www.calteachersstudy.org/study-findings)]
+
+### Publication topic areas overview
+
+```{r number by topic, fig.align='center'}
+publications %>%
+  group_by(topic_area) %>% 
+  summarize(count_publications = n()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = reorder(topic_area, count_publications),
+           y = count_publications)) +
+  geom_col(fill = "lightblue") +
+  coord_flip() +
+  labs(title = "Number of Publications by Topic Area",
+     x = "",
+     y = "Number of Publications") +
+  theme_classic()
+```
+<br>
+448 publications, published between 2002 and 2021, were evaluated for this report. Publications covered 31 different topic areas, and each publication could fall under more than one topic.
+
+<br>
+
+```{r year x pub, fig.align='center'}
+publications %>%
+  group_by(topic_area,year_of_publication) %>%
+  summarise(counts_topic_in_year=n()) %>% 
+  ungroup() %>%
+  ggplot(aes(y = reorder(topic_area,counts_topic_in_year),
+             x = year_of_publication,
+             group=topic_area,
+             fill=counts_topic_in_year)) +
+  geom_tile(color="white") +
+  scale_fill_gradient2(low = "#7fbf7b", 
+                       high = "#af8dc3", 
+                       mid = "white", 
+                       midpoint = 8, 
+                       limit = c(0,17),
+                       name="Number of\nPublications") +
+  theme_minimal() +
+  theme(text= element_text(family="Arial"),
+        plot.subtitle = element_markdown(size=10),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "CTS Publication Topic Areas Over Time",
+       subtitle = str_glue("<span style = 'color: #af8dc3;'>Breast cancer and genetics are the topics most commonly published on.</span>"),
+       x = "\nYear of Publication",
+       y = "")
+```
+<br><br>
+
+```{r top 5, fig.align='center'}
+publications %>%
+  mutate(year_grouped = case_when(
+    year_of_publication %in% c(2002,2003,2004,2005,2006) ~ "2002-2006",
+    year_of_publication %in% c(2007,2008,2009,2010,2011) ~ "2007-2011",
+    year_of_publication %in% c(2012,2013,2014,2015,2016) ~ "2012-2016",
+    year_of_publication %in% c(2017,2018,2019,2020,2021) ~ "2017-2021",
+    TRUE ~ "Other"
+  )) %>% 
+  filter(!(year_grouped=="Other")) %>% 
+  group_by(year_grouped,topic_area) %>% 
+  summarize(count = n()) %>% 
+  top_n(5) %>%
+  mutate(percent_of_total_in_topic = count/sum(count)) %>% 
+  arrange(desc(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = reorder(topic_area,count),
+             y = count,
+             group=topic_area,
+             fill=topic_area)) +
+  geom_col(color="transparent",
+            show.legend = FALSE) +
+  theme_classic() +
+  theme(text = element_text(family="Arial"),
+        axis.title = element_blank(),
+        panel.grid.minor.y = element_line(),
+        panel.grid.major.y = element_line(),
+        plot.title = element_markdown(),
+        plot.subtitle = element_markdown(size=10),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Top 5 Topic Areas for CTS Publications for 5 Year Spans",
+       subtitle = str_glue("While in the top 5 publication topics early on, <b><span style = 'color: #9e0142;'>alcohol</span></b> and <span style = 'color: #5e4fa2;'><b>smoking</span></b> have not reappeared in the top 5."),
+       y = "Year",
+       x = "Topic Area") +
+  facet_grid(~year_grouped, scales = "free") +
+  scale_fill_brewer(palette="Spectral")
+```
+<br>
+
+### Topics that increased in popularity
+
+<br>
+```{r grouped year}
+# Structuring data for visualization - break into 5 groups & pivot wide
+publications_grouped_years <- publications %>%
+  mutate(year_grouped = case_when(
+    year_of_publication %in% c(2002,2003,2004,2005,2006) ~ "2002-2006",
+    year_of_publication %in% c(2007,2008,2009,2010,2011) ~ "2007-2011",
+    year_of_publication %in% c(2012,2013,2014,2015,2016) ~ "2012-2016",
+    year_of_publication %in% c(2017,2018,2019,2020,2021) ~ "2017-2021",
+    TRUE ~ "Other"
+  )) %>% 
+  filter(!(year_grouped=="Other")) %>% 
+  group_by(year_grouped,topic_area) %>% 
+  summarize(count = n()) %>% 
+  mutate(percent_of_total_in_topic = count/sum(count)) %>% 
+  ungroup() %>%  
+  pivot_wider(id_cols = c(topic_area),
+              names_from = year_grouped,
+              values_from = percent_of_total_in_topic) %>% 
+  replace(is.na(.), 0)
+```
+
+```{r growth table, fig.align='center'}
+# Finding district with the most growth with between first 5 years and last 5 years
+publications_grouped_years %>% 
+  mutate(growth =  `2017-2021` - `2002-2006`) %>%
+  select(topic_area,`2002-2006`,`2017-2021`,growth) %>% 
+  slice_max(growth,n=5) %>% 
+  gt() %>% 
+  tab_options(table.font.names = "Arial",
+              heading.title.font.size = 16,
+              heading.subtitle.font.size = 12,
+              table.font.size = 14) %>% 
+  cols_label(topic_area="Topic Area",
+             growth="Growth") %>% 
+  fmt_percent(columns=c(`2002-2006`,`2017-2021`,growth),
+              decimals=1) %>% 
+  cols_align(
+    columns = c(`2002-2006`,`2017-2021`,growth),
+    align = "center"
+  ) %>% 
+  cols_width(
+    c(topic_area) ~ px(140),
+    everything() ~px(100)
+  ) %>% 
+  tab_source_note(
+    source_note = "Data from the CTS Publications Smartsheet"
+  ) %>% 
+  tab_style(
+    locations = cells_column_labels(
+      columns = everything()
+    ),
+    style = cell_text(
+      weight = "bold",
+      color = "orange"
+    )
+  ) %>% 
+  tab_style(
+    locations = cells_body(
+      columns=growth,
+      rows = growth > 0.1
+    ),
+    style = list(
+      cell_fill(color="lightblue"),
+      cell_text(style = "italic")
+  )
+  ) %>% 
+  tab_header(
+    title=str_glue("Top 5 topic areas by growth in publications"),
+    subtitle="Growth over 10% is highlighted in blue."
+  )
+```
+
+
+<br>
+
+```{r choose colors}
+# Choose colors for dumbelle charts
+start_color <- "#d8b365"
+end_color <- "#5ab4ac"
+```
+
+
+```{r growth dumbell chart, fig.align='center'}
+publications_grouped_years %>% 
+  mutate(growth =  `2017-2021` - `2002-2006`) %>%
+  select(topic_area,`2002-2006`,`2017-2021`,growth) %>% 
+  mutate(percent_display = percent(growth, accuracy = 1)) %>% 
+  slice_max(growth,n=5) %>%
+  ggplot(aes(x = `2002-2006`,
+             xend = `2017-2021`,
+             y = reorder(topic_area,growth),
+             yend = topic_area)) +
+  geom_dumbbell(colour_x = start_color,
+             colour = start_color,
+             colour_xend = end_color,
+             size_x = 2,
+             size_xend = 3) +
+  geom_text(aes(x=`2017-2021`,
+                 label=percent_display),
+          fontface="bold",
+          size = 2.8,
+          nudge_x = 0.012,
+          color = end_color) +
+  theme_minimal() +
+  theme(text = element_text(family="Arial"),
+        plot.title = element_markdown()) +
+  scale_x_continuous(label = percent_format(),
+                     limits = c(0,0.3)) +
+  labs(title=str_glue("Publication topic areas with the most growth <br> between <span style = 'color: {start_color};'><b>2002-2006</b></span> and <span style = 'color: {end_color};'><b>2017-2021</span></b>"),
+       y="",
+       x="")
+```
+<br>
+
+### Topics that decreased in popularity
+<br>
+```{r decrease table, fig.align='center'}
+# Finding district with the largest decrease with between first 5 years and last 5 years
+publications_grouped_years %>% 
+  mutate(decrease = `2002-2006` - `2017-2021`) %>%
+  select(topic_area,`2002-2006`,`2017-2021`,decrease) %>% 
+  slice_max(decrease,n=5) %>% 
+  gt() %>% 
+  tab_options(table.font.names = "Arial",
+              heading.title.font.size = 16,
+              heading.subtitle.font.size = 12,
+              table.font.size = 14) %>% 
+  cols_label(topic_area="Topic Area",
+             decrease="Decrease") %>% 
+  fmt_percent(columns=c(`2002-2006`,`2017-2021`,decrease),
+              decimals=1) %>% 
+  cols_align(
+    columns = c(`2002-2006`,`2017-2021`,decrease),
+    align = "center"
+  ) %>% 
+  cols_width(
+    c(topic_area) ~ px(140),
+    everything() ~px(100)
+  ) %>% 
+  tab_source_note(
+    source_note = "Data from the CTS Publications Smartsheet"
+  ) %>% 
+  tab_style(
+    locations = cells_column_labels(
+      columns = everything()
+    ),
+    style = cell_text(
+      weight = "bold",
+      color = "orange"
+    )
+  ) %>% 
+  tab_style(
+    locations = cells_body(
+      columns=decrease,
+      rows = decrease > 0.1
+    ),
+    style = list(
+      cell_fill(color="lightblue"),
+      cell_text(style = "italic")
+  )
+  ) %>% 
+  tab_header(
+    title=str_glue("Top 5 topic areas by decrease in publications"),
+    subtitle="Decrease over 10% is highlighted in blue."
+  )
+```
+<br>
+
+```{r decrease dumbell chart, fig.align='center'}
+publications_grouped_years %>% 
+  mutate(decrease = `2002-2006` - `2017-2021`) %>%
+  select(topic_area,`2002-2006`,`2017-2021`,decrease) %>% 
+  mutate(percent_display = percent(decrease, accuracy = 1)) %>% 
+  slice_max(decrease,n=5) %>%
+  ggplot(aes(x = `2002-2006`,
+             xend = `2017-2021`,
+             y = reorder(topic_area,decrease),
+             yend = topic_area)) +
+  geom_dumbbell(colour_x = start_color,
+             colour = start_color,
+             colour_xend = end_color,
+             size_x = 2,
+             size_xend = 3) +
+  geom_text(aes(x=`2017-2021`,
+                 label=percent_display),
+          fontface="bold",
+          size = 2.7,
+          nudge_x = -0.007,
+          color = end_color) +
+  theme_minimal() +
+  theme(text=element_text(family="Arial"),
+        plot.title = element_markdown()) +
+  scale_x_continuous(label = percent_format()) +
+  labs(title=str_glue("Publication topic areas with the greatest decrease <br> between <span style = 'color: {start_color};'><b>2002-2006</span></b> and <span style = 'color: {end_color};'><b>2017-2021</span></b>"),
+       y="",
+       x="")
+```
