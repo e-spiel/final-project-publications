@@ -123,18 +123,18 @@ publications %>%
              group=topic_area,
              fill=topic_area)) +
   geom_col(color="transparent",
-            show.legend = FALSE) +
+            show.legend = FALSE,
+           alpha=0.7) +
   theme_classic() +
   theme(text = element_text(family="Arial"),
         axis.title = element_blank(),
-        panel.grid.minor.y = element_line(),
-        panel.grid.major.y = element_line(),
+        panel.grid.major.y = element_line(color="#f7f7f7"),
         plot.title = element_markdown(),
         plot.subtitle = element_markdown(size=10),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   labs(title = "Top 5 Topic Areas for CTS Publications for 5 Year Spans",
        subtitle = str_glue("While in the top 5 publication topics early on, <b><span style = 'color: #9e0142;'>alcohol</span></b> and <span style = 'color: #5e4fa2;'><b>smoking</span></b> have not reappeared in the top 5."),
-       y = "Year",
+       y = "Count",
        x = "Topic Area") +
   facet_grid(~year_grouped, scales = "free") +
   scale_fill_brewer(palette="Spectral")
