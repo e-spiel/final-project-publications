@@ -1,16 +1,17 @@
 ---
-title: "CTS Publications Report"
+title: "CTS Publications Dashboard"
 author: "Emma Spielfogel"
-date: "2022-12-30"
+date: "`r Sys.Date()`"
 params:
   topic_selection: "Breast"
   year_selection: "2002"
 output:
-  html_document:
-    theme: cerulean
+  xaringan::moon_reader:
+    css: shinobi
     toc: TRUE
-    toc_depth: 3
-    toc_float: TRUE
+    number_sections: FALSE
+    fig_caption: TRUE
+    footnote: TRUE
   
 ---
 
@@ -40,7 +41,7 @@ library(tidytext)
 publications <- read_rds("clean-data/cts-publications-clean.rds")
 ```
 
-![](images/CTS website header.png){width=50px}
+![](images/CTS website header.png)
 
 # Introduction
 
@@ -48,7 +49,9 @@ This report provides an overview of publications using [California Teachers Stud
 
 > Although the California Teachers Study's early research focused primarily on breast cancer, the design of a cohort study like the CTS supports research on many aspects of women's health.
 > 
-> California Teachers Study researchers have examined specific cancers as well as the risk factors - both modifiable and inherited - that contribute to female reproductive cancers and other diseases among our study population.^[Source: [California Teachers Study website](https://www.calteachersstudy.org/study-findings)]
+> California Teachers Study researchers have examined specific cancers as well as the risk factors - both modifiable and inherited - that contribute to female reproductive cancers and other diseases among our study population.
+
+---
 
 ### Publication topic areas overview
 
@@ -66,10 +69,12 @@ publications %>%
      y = "Number of Publications") +
   theme_classic()
 ```
-<br>
+
 448 publications, published between 2002 and 2021, were evaluated for this report. Publications covered 31 different topic areas, and each publication could fall under more than one topic.
 
-<br>
+---
+
+### Publication topic areas overview
 
 ```{r year x pub, fig.align='center'}
 publications %>%
@@ -100,7 +105,10 @@ publications %>%
        x = "\nYear of Publication",
        y = "")
 ```
-<br><br>
+
+---
+
+### Publication topic areas overview
 
 ```{r top 5, fig.align='center'}
 publications %>%
@@ -139,11 +147,7 @@ publications %>%
   facet_grid(~year_grouped, scales = "free") +
   scale_fill_brewer(palette="Spectral")
 ```
-<br>
 
-### Topics that increased in popularity
-
-<br>
 ```{r grouped year}
 # Structuring data for visualization - break into 5 groups & pivot wide
 publications_grouped_years <- publications %>%
@@ -164,6 +168,12 @@ publications_grouped_years <- publications %>%
               values_from = percent_of_total_in_topic) %>% 
   replace(is.na(.), 0)
 ```
+
+---
+
+### Topics that increased in popularity
+
+<br>
 
 ```{r growth table, fig.align='center'}
 # Finding district with the most growth with between first 5 years and last 5 years
@@ -220,14 +230,16 @@ publications_grouped_years %>%
 ```
 
 
-<br>
 
 ```{r choose colors}
-# Choose colors for dumbelle charts
+# Choose colors for dumbell charts
 start_color <- "#d8b365"
 end_color <- "#5ab4ac"
 ```
 
+---
+
+### Topics that increased in popularity
 
 ```{r growth dumbell chart, fig.align='center'}
 publications_grouped_years %>% 
@@ -259,10 +271,14 @@ publications_grouped_years %>%
        y="",
        x="")
 ```
-<br>
+
+
+---
 
 ### Topics that decreased in popularity
+
 <br>
+
 ```{r decrease table, fig.align='center'}
 # Finding district with the largest decrease with between first 5 years and last 5 years
 publications_grouped_years %>% 
@@ -313,7 +329,10 @@ publications_grouped_years %>%
     subtitle="Decrease over 10% is highlighted in blue."
   )
 ```
-<br>
+
+---
+
+### Topics that decreased in popularity
 
 ```{r decrease dumbell chart, fig.align='center'}
 publications_grouped_years %>% 
