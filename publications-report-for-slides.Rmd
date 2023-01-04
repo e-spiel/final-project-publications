@@ -1,5 +1,5 @@
 ---
-title: "CTS Publications Dashboard"
+title: "CTS Publications Report"
 author: "Emma Spielfogel"
 date: "`r Sys.Date()`"
 params:
