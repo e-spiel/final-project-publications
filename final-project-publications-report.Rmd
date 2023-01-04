@@ -83,7 +83,7 @@ publications %>%
   geom_tile(color="white") +
   scale_fill_gradient2(low = "#7fbf7b", 
                        high = "#af8dc3", 
-                       mid = "white", 
+                       mid = "#eff3ff", 
                        midpoint = 8, 
                        limit = c(0,17),
                        name="Number of\nPublications") +
