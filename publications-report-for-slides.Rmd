@@ -1,7 +1,7 @@
 ---
 title: "CTS Publications Report"
 author: "Emma Spielfogel"
-date: "`r Sys.Date()`"
+date: "2022-12-30"
 params:
   topic_selection: "Breast"
   year_selection: "2002"
